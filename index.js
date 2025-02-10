@@ -14,45 +14,81 @@ app.use(cors());
 app.get("/", (req, res) => {
   res.send("All good, server is running");
 });
+const multer  = require('multer');
 
-const filePath = path.join(__dirname, 'doc_tst.pdf');
-const controllerUrl = "http://localhost:8080/scan-transfer/fileupload/start"; 
-
-app.get('/mfpscan/ExecuteJob/v1', async (req, res) => {
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-        return res.status(400).json({ message: 'File not found.' });
-    }
-
-    try {
-        const form = new FormData();
-        form.append('file', fs.createReadStream(filePath), {
-            filename: 'doc_tst.pdf',
-            contentType: 'application/pdf',
-        });
-
-        axios.post(controllerUrl, form, {
-            headers: {
-                ...form.getHeaders(),
-            },
-        })
-        .then(() => {
-            console.log('File sent successfully');
-        })
-        .catch((error) => {
-            console.error('Error sending file:', error);
-        });
-
-        // Respond immediately without waiting for axios to complete
-        res.status(200).json({ message: 'File sent to controller without waiting for response.' });
-    } catch (error) {
-        console.error('Error processing the file:', error);
-        res.status(500).json({ message: 'Failed to send file to controller.', error: error.message });
-    }
+//start url
+app.get("/start", (req, res) => {
+    res.send("start url called");
+    console.log('start url')
 });
+
+//start url
+app.get("/end", (req, res) => {
+    res.send("start url called");
+    console.log('end url')
+});
+// Configure Multer to store the file in memory as a buffer
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Use upload.any() to accept files with any field name
+app.post('/upload', upload.any(), (req, res) => {
+    console.log('upload url called')
+    // Check if any file has been uploaded
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+  
+    // Define the folder where the files will be stored
+    const uploadFolder = path.join(__dirname, 'uploads');
+  
+    // Ensure the uploads folder exists; if not, create it
+    if (!fs.existsSync(uploadFolder)) {
+      fs.mkdirSync(uploadFolder, { recursive: true });
+    }
+  
+    // Iterate over the files and write each file to disk
+    req.files.forEach(file => {
+      const filePath = path.join(uploadFolder, file.originalname);
+      fs.writeFile(filePath, file.buffer, err => {
+        if (err) {
+          console.error(`Error saving file ${file.originalname}:`, err);
+          return res.status(500).json({ error: 'Failed to save file(s)' });
+        }
+      });
+    });
+  
+    res.json({ message: 'Files uploaded successfully' });
+  });
+
+  
+  
+  
 
 // Start Server
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+});
+
+
+
+
+app.all("/callback", upload.any(), (req, res) => {
+  console.log("\n===== Incoming API Response =====");
+  console.log("Headers:", req.headers);
+  console.log("Query Params:", req.query);
+
+  if (req.files && req.files.length > 0) {
+    console.log("Received File(s):", req.files.map(f => f.originalname));
+  } else if (req.is("application/json")) {
+    console.log("Received JSON:", req.body);
+  } else if (req.is("text/*")) {
+    console.log("Received Text:", req.body);
+  } else {
+    console.log("Received Raw Data:", req.body);
+    fs.writeFileSync("unknown_response.bin", req.body); // Save raw response
+  }
+
+  res.status(200).send("Received!");
 });
