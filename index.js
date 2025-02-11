@@ -59,6 +59,7 @@ app.post('/upload', upload.any(), (req, res) => {
     });
   
     res.json({ message: 'Files uploaded successfully' });
+    console.log('file uploaded successfully ')
   });
 
 // Start Server
