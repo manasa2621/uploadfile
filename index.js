@@ -33,7 +33,7 @@ const upload = multer({ storage: storage });
 
 // Use upload.any() to accept files with any field name
 app.post('/upload', upload.any(), (req, res) => {
-    console.log('upload url called')
+    console.log('manasa san your file upload url called')
     // Check if any file has been uploaded
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -61,18 +61,11 @@ app.post('/upload', upload.any(), (req, res) => {
     res.json({ message: 'Files uploaded successfully' });
   });
 
-  
-  
-  
-
 // Start Server
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-
-
 
 app.all("/callback", upload.any(), (req, res) => {
   console.log("\n===== Incoming API Response =====");
