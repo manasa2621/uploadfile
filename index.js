@@ -54,6 +54,9 @@ app.post("/upload", upload.any(), async (req, res) => {
       "X-COCOROToken": "d0dc631549f7434d90b1ed34c1393b4d",
     };
 
+    console.log("Uploading file to: api url");
+    console.log("Headers being sent:", headers);
+    console.log("File being sent:", file.originalname)
     // Define the API endpoint
     const uploadUrl =
       "https://m7.networkprint.jp/rest/v1/uploadFile?available_period=7d&max_download_count=10&service_kind=cocoro&mail_address=cocorodev.user2@gmail.com&tenant_id=K0KNM6MU8E";
