@@ -31,36 +31,46 @@ app.get("/end", (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Use upload.any() to accept files with any field name
-app.post('/upload', upload.any(), (req, res) => {
-    console.log('manasa san your file upload url called')
-    // Check if any file has been uploaded
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-  
-    // Define the folder where the files will be stored
-    const uploadFolder = path.join(__dirname, 'uploads');
-  
-    // Ensure the uploads folder exists; if not, create it
-    if (!fs.existsSync(uploadFolder)) {
-      fs.mkdirSync(uploadFolder, { recursive: true });
-    }
-  
-    // Iterate over the files and write each file to disk
-    req.files.forEach(file => {
-      const filePath = path.join(uploadFolder, file.originalname);
-      fs.writeFile(filePath, file.buffer, err => {
-        if (err) {
-          console.error(`Error saving file ${file.originalname}:`, err);
-          return res.status(500).json({ error: 'Failed to save file(s)' });
-        }
-      });
-    });
-  
-    res.json({ message: 'Files uploaded successfully' });
-    console.log('file uploaded successfully ')
-  });
+
+
+app.post("/upload", upload.any(), async (req, res) => {
+  console.log("upload URL called");
+
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  try {
+    // Pick only the first file
+    const file = req.files[0];
+
+    // Prepare form data
+    const formData = new FormData();
+    formData.append("file", file.buffer, file.originalname);
+
+    // Set headers (using X-COCOROToken instead of Authorization)
+    const headers = {
+      ...formData.getHeaders(),
+      "X-COCOROToken": "d0dc631549f7434d90b1ed34c1393b4d",
+    };
+
+    // Define the API endpoint
+    const uploadUrl =
+      "https://m7.networkprint.jp/rest/v1/uploadFile?available_period=7d&max_download_count=10&service_kind=cocoro&mail_address=cocorodev.user2@gmail.com&tenant_id=K0KNM6MU8E";
+
+    // Send request to external API (only once)
+    const response = await axios.post(uploadUrl, formData, { headers });
+
+    // Respond with the external API's response
+    res.status(response.status).json(response.data);
+    console.log("File successfully forwarded to external API");
+    console.log("Upload Response:", response.data);
+
+  } catch (error) {
+    console.error("Error forwarding file:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to upload file to external API" });
+  }
+});
 
 // Start Server
 const PORT = 3000;
